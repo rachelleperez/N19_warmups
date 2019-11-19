@@ -42,6 +42,21 @@ ORDER BY country,rank, customerid;
  ...
 
 
+*** AFTER CLASS REVIEW ***
+
+WITH longest_standing_by_country AS (
+    Select c.country, c.customerid, current_date - o.orderdate as customer_age, 
+    rank () over (partition by c.country order by (o.orderdate - current_date) asc) as rank
+    From customers c inner join orders o using(customerid)
+    Order by c.country, c.customerid, rank
+
+)
+
+SELECT *
+FROM longest_standing_by_country 
+WHERE rank in (1, 2, 3) 
+ORDER BY country,rank, customerid;
+
 
 
 -- Modify the previous query to get the 3 newest customers in each each country.
@@ -82,12 +97,28 @@ ORDER BY country,rank, customerid;
 ...
 
 
+*** AFTER CLASS REVIEW ***
+
+WITH newest_customer_by_country AS (
+    Select c.country, c.customerid, current_date - o.orderdate as customer_age, 
+    rank () over (partition by c.country order by (o.orderdate - current_date) desc) as rank
+    From customers c inner join orders o using(customerid)
+    Order by c.country, c.customerid, rank
+
+)
+
+SELECT *
+FROM newest_customer_by_country 
+WHERE rank in (1, 2, 3) 
+ORDER BY country,rank, customerid;
+
+
 -- Get the 3 most frequently ordered products in each city
 
 *** QUERY ***
 
 WITH products_by_country AS (
-Select c.country, c.city, od.productid, sum(quantity) over (partition by c.country, c.city, od.quantity), 
+Select c.country, c.city, od.productid, sum(quantity), 
 rank() over(partition by country,city order by sum(quantity) desc)
 From customers c inner join orders o using(customerid) inner join orderdetails od using(orderid)
 GROUP BY c.country, c.city, od.productid, od.quantity
@@ -115,7 +146,18 @@ SELECT * FROM products_by_country WHERE rank IN (1,2,3) ORDER BY country, city, 
  Austria     | Salzburg        |        76 | 150 |    1
 ...
 
+*** AFTER CLASS REVIEW ***
 
+WITH products_by_country AS (
+Select c.country, c.city, od.productid, sum(quantity), 
+row_number () over(partition by country,city order by sum(quantity) desc)
+From customers c inner join orders o using(customerid) inner join orderdetails od using(orderid)
+GROUP BY c.country, c.city, od.productid, od.quantity
+Order by c.country, c.city, od.productid)
+
+SELECT * FROM products_by_country 
+WHERE row_number IN (1,2,3) 
+ORDER BY country, city, row_number, productid;
 
 
 
